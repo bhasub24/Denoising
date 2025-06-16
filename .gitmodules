@@ -1,0 +1,3 @@
+[submodule "SUPPORT"]
+	path = SUPPORT
+	url = https://github.com/NICALab/SUPPORT.git
