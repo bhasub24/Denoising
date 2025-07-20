@@ -1,5 +1,7 @@
 support_env/
 outputs/
+dp_with_bs/
+Just_PMD/
 
 __pycache__/
 *.pyc
