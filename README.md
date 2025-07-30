@@ -1,4 +1,5 @@
 Functional Imaging Denoising Repository
+
 This repository hosts a comprehensive suite of denoising algorithms tailored for functional imaging, with a special emphasis on voltage imaging data. The implemented methods span tensor decomposition, self-supervised denoising, and hybrid pipelines designed to separate neural signals from complex, structured noise.
 
 Implementations Overview
