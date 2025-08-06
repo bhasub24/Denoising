@@ -351,8 +351,17 @@ def get_2d_posencode_inp(H, W, n_inputs):
     posencode_vals = np.hstack((sin_vals, cos_vals)).astype(np.float32)
     
     inp = posencode_vals.reshape(H, W, 2*n_inputs)
-    inp = torch.autograd.Variable(torch.tensor(inp), requires_grad=True).cuda()
-    inp = torch.nn.Parameter(inp.permute(2, 0, 1)[None, ...])
+
+    inp = torch.nn.Parameter(torch.tensor(inp).permute(2, 0, 1)[None, ...])
+    
+    return inp
+
+def get_inp(tensize, const=10.0):
+    '''
+        Wrapper to get a variable on graph
+    '''
+    inp = torch.rand(tensize) /const
+    inp = torch.nn.Parameter(inp, requires_grad=True)
     
     return inp
 
@@ -415,13 +424,13 @@ def skip(
             
         # skip.add(Concat(2, GenNoise(nums_noise[i]), skip_part))
 
-        deeper.add_module(f"deeper_conv_{i}",conv(input_depth, num_channels_down[i], filter_size_down[i], 2, bias=need_bias, pad=pad, downsample_mode=downsample_mode[i]))
-        deeper.add_module(f"deeper_bn_{i}",bn(num_channels_down[i]))
-        deeper.add_module(f"deeper_act_{i}",act(act_fun))
+        deeper.add_module(f"deeper_conv_1_{i}",conv(input_depth, num_channels_down[i], filter_size_down[i], 2, bias=need_bias, pad=pad, downsample_mode=downsample_mode[i]))
+        deeper.add_module(f"deeper_bn_1_{i}",bn(num_channels_down[i]))
+        deeper.add_module(f"deeper_act_1_{i}",act(act_fun))
 
-        deeper.add_module(f"deeper_conv_{i}",conv(num_channels_down[i], num_channels_down[i], filter_size_down[i], bias=need_bias, pad=pad))
-        deeper.add_module(f"deeper_bn_{i}",bn(num_channels_down[i]))
-        deeper.add_module(f"deeper_act_{i}",act(act_fun))
+        deeper.add_module(f"deeper_conv_2_{i}",conv(num_channels_down[i], num_channels_down[i], filter_size_down[i], bias=need_bias, pad=pad))
+        deeper.add_module(f"deeper_bn_2_{i}",bn(num_channels_down[i]))
+        deeper.add_module(f"deeper_act_2_{i}",act(act_fun))
 
         deeper_main = nn.Sequential()
 
@@ -432,17 +441,17 @@ def skip(
             deeper.add_module(f"deeper_main",deeper_main)
             k = num_channels_up[i + 1]
 
-        deeper.add_module(f"upsample_{i}",nn.Upsample(scale_factor=2, mode=upsample_mode[i]))
+        deeper.add_module(f"upsample_{i}",nn.Upsample(scale_factor=2, mode=upsample_mode[i], align_corners=False))
 
-        model_tmp.add_module(f"",conv(num_channels_skip[i] + k, num_channels_up[i], filter_size_up[i], 1, bias=need_bias, pad=pad))
-        model_tmp.add_module(bn(num_channels_up[i]))
-        model_tmp.add_module(act(act_fun))
+        model_tmp.add_module(f"model_conv_{i}", conv(num_channels_skip[i] + k, num_channels_up[i], filter_size_up[i], 1, bias=need_bias, pad=pad))
+        model_tmp.add_module(f"model_bn_{i}", bn(num_channels_up[i]))
+        model_tmp.add_module(f"model_act_{i}", act(act_fun))
 
 
         if need1x1_up:
-            model_tmp.add_module(f"model_conv_{i}",conv(num_channels_up[i], num_channels_up[i], 1, bias=need_bias, pad=pad))
-            model_tmp.add_module(f"model_bn_{i}",bn(num_channels_up[i]))
-            model_tmp.add_module(f"model_act_{i}",act(act_fun))
+            model_tmp.add_module(f"model_conv_1_{i}",conv(num_channels_up[i], num_channels_up[i], 1, bias=need_bias, pad=pad))
+            model_tmp.add_module(f"model_bn_1_{i}",bn(num_channels_up[i]))
+            model_tmp.add_module(f"model_act_1_{i}",act(act_fun))
 
         input_depth = num_channels_down[i]
         model_tmp = deeper_main
